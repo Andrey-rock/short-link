@@ -4,6 +4,8 @@
 
 CREATE TABLE IF NOT EXISTS links
 (
-    code CHAR(6) PRIMARY KEY,
-    link TEXT NOT NULL
+    code CHAR(10) PRIMARY KEY,
+    link TEXT NOT NULL,
+    created_at TIMESTAMP,
+    expires_at TIMESTAMP
 );

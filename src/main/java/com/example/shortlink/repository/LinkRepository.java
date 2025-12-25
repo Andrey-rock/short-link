@@ -9,4 +9,8 @@ import java.util.Optional;
 @Repository
 public interface LinkRepository extends JpaRepository<LinkEntity, String> {
     Optional<LinkEntity> findByCode(String code);
+
+    Optional<LinkEntity> findByLink(String link);
+
+    boolean existsByCode(String code);
 }

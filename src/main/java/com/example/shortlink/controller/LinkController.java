@@ -1,24 +1,27 @@
 package com.example.shortlink.controller;
 
+import com.example.shortlink.dto.CreateLinkRequest;
 import com.example.shortlink.service.LinkService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/slink.ru")
+@Validated
 public class LinkController {
 
     private final LinkService linkService;
 
-    @GetMapping("/add")
-    public String addLink(@RequestParam String url) {
-        String DOMEN = "slink.ru";
-        String code = linkService.addLink(url);
-        return "Ваш новый адрес: " + DOMEN + "/" + code;
+    @PostMapping("/add")
+    public String addLink(@Valid @RequestBody CreateLinkRequest request) {
+        String domen = "http://localhost:8080";
+        String code = linkService.addLink(request);
+        return "Ваш новый адрес: " + domen + "/" + code;
     }
 
     @GetMapping("/{code}")
