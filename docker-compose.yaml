@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  my-java-app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: shortlink-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/links
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=none
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: 'postgres:17.1-alpine'
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=links
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./src/main/resources/db/changelog/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+volumes:
+  db-data:
