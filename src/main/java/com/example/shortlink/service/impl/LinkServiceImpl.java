@@ -24,7 +24,7 @@ public class LinkServiceImpl implements LinkService {
 
 
     @Override
-    public String addLink(CreateLinkRequest request) {
+    public String addLink(@NotNull CreateLinkRequest request) {
 
         Optional<LinkEntity> existLink = linkRepository.findByLink(request.url());
         if (existLink.isPresent()) {
@@ -32,8 +32,7 @@ public class LinkServiceImpl implements LinkService {
         }
 
         String code = request.alias() != null && !request.alias().isEmpty() ?
-                validateAndReserveAlias(request.alias())
-                : generateUniqueCode();
+                validateAndReserveAlias(request.alias()) : generateUniqueCode();
 
         LocalDateTime expiresAt = null;
         if (request.expiresInHours() != null) {
