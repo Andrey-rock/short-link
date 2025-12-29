@@ -7,10 +7,11 @@ import com.example.shortlink.exception.InvalidAliasException;
 import com.example.shortlink.exception.LinkExpiredException;
 import com.example.shortlink.exception.LinkNotFoundException;
 import com.example.shortlink.repository.LinkRepository;
-import com.example.shortlink.service.LinkService;
+import com.example.shortlink.service.ILinkService;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -18,17 +19,18 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class LinkServiceImpl implements LinkService {
+public class LinkService implements ILinkService {
 
     private final LinkRepository linkRepository;
 
 
     @Override
-    public String addLink(@NotNull CreateLinkRequest request) {
+    @Transactional
+    public LinkEntity addLink(CreateLinkRequest request) {
 
         Optional<LinkEntity> existLink = linkRepository.findByLink(request.url());
         if (existLink.isPresent()) {
-            return existLink.get().getCode();
+            return existLink.get();
         }
 
         String code = request.alias() != null && !request.alias().isEmpty() ?
@@ -44,9 +46,8 @@ public class LinkServiceImpl implements LinkService {
                 .link(request.url())
                 .expiresAt(expiresAt)
                 .build();
-        linkRepository.save(link);
 
-        return code;
+        return linkRepository.save(link);
     }
 
     @Override

@@ -18,16 +18,13 @@ import java.util.Map;
 @Hidden
 public class GlobalControllerAdvice {
 
-    @ExceptionHandler({AliasAlreadyExistsException.class,
-            InvalidAliasException.class,
-            LimitExceededException.class,
-            LinkNotFoundException.class})
-    public ResponseEntity<ResponseError> handleAliasAlreadyExistsException(final AliasAlreadyExistsException e) {
+    @ExceptionHandler(LinkNotFoundException.class)
+    public ResponseEntity<ResponseError> handleLinkNotFoundException(final LinkNotFoundException e) {
         ResponseError error = ResponseError.builder()
                 .message(e.getMessage())
                 .timestamp(Instant.now())
                 .build();
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -42,6 +39,20 @@ public class GlobalControllerAdvice {
         });
         ResponseError error = ResponseError.builder()
                 .message(errors.toString())
+                .timestamp(Instant.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler({
+            AliasAlreadyExistsException.class,
+            InvalidAliasException.class,
+            LimitExceededException.class,
+            LinkExpiredException.class  // добавьте это исключение
+    })
+    public ResponseEntity<ResponseError> handleAllBusinessException(final Exception e) {
+        ResponseError error = ResponseError.builder()
+                .message(e.getMessage())
                 .timestamp(Instant.now())
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);

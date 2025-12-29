@@ -7,7 +7,7 @@ import com.example.shortlink.exception.InvalidAliasException;
 import com.example.shortlink.exception.LinkExpiredException;
 import com.example.shortlink.exception.LinkNotFoundException;
 import com.example.shortlink.repository.LinkRepository;
-import com.example.shortlink.service.impl.LinkServiceImpl;
+import com.example.shortlink.service.impl.LinkService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,8 +20,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,10 +33,9 @@ public class LinkServiceTest {
     private LinkRepository linkRepository;
 
     @InjectMocks
-    private LinkServiceImpl linkService;
+    private LinkService linkService;
 
     LocalDateTime now;
-    String domen;
     String uri;
     String code;
     CreateLinkRequest requestWithoutAliasAndTime, requestWithoutAlias, requestWithoutTime,
@@ -47,7 +45,6 @@ public class LinkServiceTest {
     @BeforeEach
     void setUp() {
         now = LocalDateTime.now();
-        domen = "http://localhost:8080";
         uri = "https://test.com/qwerty123456789";
         code = "test1";
         requestWithoutAliasAndTime = new CreateLinkRequest(uri, null, null);
@@ -61,11 +58,10 @@ public class LinkServiceTest {
 
     @Test
     @DisplayName("Тест успешного создания ссылки без алиаса и времени действия")
-    void addLink_ShouldSaveLinkWithGenCodeWithoutTimeLiveAndReturnShortLink() {
+    void addLink_ShouldSaveLinkWithGenCodeWithoutTimeLive() {
 
-        String shortLink = linkService.addLink(requestWithoutAliasAndTime);
+        linkService.addLink(requestWithoutAliasAndTime);
 
-        assertEquals(6, shortLink.length());
         verify(linkRepository).save(argThat(linkEntity ->
                 linkEntity.getLink().equals(uri) &&
                         linkEntity.getCode().matches("[a-zA-Z0-9]{6}") &&
@@ -74,13 +70,10 @@ public class LinkServiceTest {
 
     @Test
     @DisplayName("Тест успешного создания ссылки без алиаса c временем действия")
-    void addLink_ShouldSaveLinkWithGenCodeAndTimeLiveAndReturnShortLink() {
+    void addLink_ShouldSaveLinkWithGenCodeAndTimeLive() {
 
-        when(linkRepository.findByLink(anyString())).thenReturn(Optional.empty());
+        linkService.addLink(requestWithoutAlias);
 
-        String shortLink = linkService.addLink(requestWithoutAlias);
-
-        assertEquals(6, shortLink.length());
         verify(linkRepository).save(argThat(linkEntity ->
                 linkEntity.getLink().equals(uri) &&
                         linkEntity.getCode().matches("[a-zA-Z0-9]{6}") &&
@@ -90,11 +83,10 @@ public class LinkServiceTest {
 
     @Test
     @DisplayName("Тест успешного создания ссылки c алиасом без времени действия")
-    void addLink_ShouldSaveLinkWithAliasWithoutTimeLiveAndReturnShortLink() {
+    void addLink_ShouldSaveLinkWithAliasWithoutTimeLive() {
 
-        String shortLink = linkService.addLink(requestWithoutTime);
+        linkService.addLink(requestWithoutTime);
 
-        assertEquals("alias", shortLink);
         verify(linkRepository).save(argThat(linkEntity ->
                 linkEntity.getLink().equals(uri) &&
                         linkEntity.getCode().equals("alias") &&
@@ -103,11 +95,10 @@ public class LinkServiceTest {
 
     @Test
     @DisplayName("Тест успешного создания ссылки со всеми параметрами")
-    void addLink_ShouldSaveLinkWithAllAttributesLiveAndReturnShortLink() {
+    void addLink_ShouldSaveLinkWithAllAttributesLive() {
 
-        String shortLink = linkService.addLink(requestWithAliasAndTime);
+        linkService.addLink(requestWithAliasAndTime);
 
-        assertEquals("alias", shortLink);
         verify(linkRepository).save(argThat(linkEntity ->
                 linkEntity.getLink().equals(uri) &&
                         linkEntity.getCode().equals("alias") &&

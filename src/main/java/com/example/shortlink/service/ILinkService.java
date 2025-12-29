@@ -1,10 +1,11 @@
 package com.example.shortlink.service;
 
 import com.example.shortlink.dto.CreateLinkRequest;
+import com.example.shortlink.entity.LinkEntity;
 
-public interface LinkService {
+public interface ILinkService {
 
-    String addLink(CreateLinkRequest request);
+    LinkEntity addLink(CreateLinkRequest request);
 
     String getFullUrl(String code);
 }
