@@ -1,6 +1,7 @@
 package com.example.shortlink.controller;
 
 import com.example.shortlink.dto.CreateLinkRequest;
+import com.example.shortlink.entity.LinkEntity;
 import com.example.shortlink.repository.LinkRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +25,8 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -171,5 +174,133 @@ public class LinkControllerIntegrationTest {
                         .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("GET /{code} - если код существует и не истек, должен выполнить редирект")
+    void redirect_WhenCodeExistsAndNotExpired_ShouldRedirect() throws Exception {
+        // Создаем ссылку в базе данных
+        LinkEntity link = LinkEntity.builder()
+                .code("valid123")
+                .link(uri)
+                .createdAt(LocalDateTime.now())
+                .build();
+        linkRepository.save(link);
+
+        mockMvc.perform(get("/{code}", "valid123"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl(uri));
+    }
+
+    @Test
+    @DisplayName("GET /{code} - если код существует с истекшим сроком, должен вернуть ошибку")
+    void redirect_WhenCodeExistsButExpired_ShouldReturnError() throws Exception {
+        // Создаем ссылку с истекшим сроком
+        LinkEntity link = LinkEntity.builder()
+                .code("expired1")
+                .link(uri)
+                .createdAt(LocalDateTime.now().minusDays(1))
+                .expiresAt(LocalDateTime.now().minusHours(1))
+                .build();
+        linkRepository.save(link);
+
+        mockMvc.perform(get("/{code}", "expired1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Ссылка истекла"));
+    }
+
+    @Test
+    @DisplayName("GET /{code} - если код не существует, должен вернуть 404")
+    void redirect_WhenCodeNotExists_ShouldReturnNotFound() throws Exception {
+        mockMvc.perform(get("/{code}", "nonexist"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("страница не найдена"));
+    }
+
+    @Test
+    @DisplayName("GET /{code} - если код существует с будущим сроком истечения, должен выполнить редирект")
+    void redirect_WhenCodeExistsWithFutureExpiration_ShouldRedirect() throws Exception {
+        // Создаем ссылку с будущим сроком истечения
+        LinkEntity link = LinkEntity.builder()
+                .code("future12")
+                .link(uri)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusHours(48))
+                .build();
+        linkRepository.save(link);
+
+        mockMvc.perform(get("/{code}", "future12"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl(uri));
+    }
+
+    @Test
+    @DisplayName("GET /{code} - если код существует без срока истечения, должен выполнить редирект")
+    void redirect_WhenCodeExistsWithoutExpiration_ShouldRedirect() throws Exception {
+        // Создаем ссылку без срока истечения
+        LinkEntity link = LinkEntity.builder()
+                .code("noexpire")
+                .link(uri)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(null) // Без срока истечения
+                .build();
+        linkRepository.save(link);
+
+        mockMvc.perform(get("/{code}", "noexpire"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl(uri));
+    }
+
+    @Test
+    @DisplayName("GET /{code} - проверка редиректа для разных URL")
+    void redirect_WhenCodeExistsWithDifferentUrls_ShouldRedirectCorrectly() throws Exception {
+        // Тестируем различные URL
+        String[] testUrls = {
+                "https://google.com",
+                "https://github.com",
+                "http://example.com",
+                "https://stackoverflow.com/questions/123456"
+        };
+
+        for (int i = 0; i < testUrls.length; i++) {
+            String code = "test" + i;
+            String testUrl = testUrls[i];
+
+            LinkEntity link = LinkEntity.builder()
+                    .code(code)
+                    .link(testUrl)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            linkRepository.save(link);
+
+            mockMvc.perform(get("/{code}", code))
+                    .andExpect(status().isFound())
+                    .andExpect(redirectedUrl(testUrl));
+
+            linkRepository.deleteAll(); // Очищаем после каждого теста
+        }
+    }
+
+    @Test
+    @DisplayName("GET /{code} - проверка чувствительности к регистру")
+    void redirect_WhenCodeWithDifferentCase_ShouldBeCaseSensitive() throws Exception {
+
+        LinkEntity link = LinkEntity.builder()
+                .code("testcode")
+                .link(uri)
+                .createdAt(LocalDateTime.now())
+                .build();
+        linkRepository.save(link);
+
+        // Попытка доступа с разным регистром должна вернуть 404
+        mockMvc.perform(get("/{code}", "TESTCODE"))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/{code}", "TestCode"))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/{code}", "testcode"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl(uri));
     }
 }
