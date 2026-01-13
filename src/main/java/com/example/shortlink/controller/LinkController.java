@@ -2,6 +2,9 @@ package com.example.shortlink.controller;
 
 import com.example.shortlink.dto.CreateLinkRequest;
 import com.example.shortlink.entity.LinkEntity;
+import com.example.shortlink.exception.AliasAlreadyExistsException;
+import com.example.shortlink.exception.InvalidAliasException;
+import com.example.shortlink.exception.LinkExpiredException;
 import com.example.shortlink.service.ILinkService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,21 +26,26 @@ public class LinkController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/add")
-    public String addLink(@Valid @RequestBody CreateLinkRequest request, HttpServletRequest httpServletRequest) {
+    public String addLink(@Valid @RequestBody CreateLinkRequest request,
+                          HttpServletRequest httpServletRequest) throws AliasAlreadyExistsException, InvalidAliasException {
+        String PATTERN = "dd.MM.yyyy HH:mm";
+        String MESSAGE = "Ваш новый адрес: %s/%s%nПолный адрес: %s%nСрок окончания действия новой ссылки: %s";
         String domen = httpServletRequest.getRequestURL()
                 .substring(0, httpServletRequest.getRequestURL().toString().indexOf("/add"));
         LinkEntity entity = ILinkService.addLink(request);
-        String PATTERN = "dd.MM.yyyy HH:mm";
         String expires = entity.getExpiresAt() != null
                 ? entity.getExpiresAt().format(DateTimeFormatter.ofPattern(PATTERN))
                 : "неограниченно";
-        return "Ваш новый адрес: " + domen + "/" + entity.getCode().trim() + "\n" +
-                "Полный адрес: " + entity.getLink() + "\n" +
-                "Срок окончания действия новой ссылки: " + expires;
+        return String.format(MESSAGE,
+                domen,
+                entity.getCode().trim(),
+                entity.getLink(),
+                expires);
     }
 
     @GetMapping("/{code}")
-    public void redirect(@PathVariable String code, HttpServletResponse response) throws IOException {
+    public void redirect(@PathVariable String code, HttpServletResponse response) throws IOException,
+            LinkExpiredException, LinkExpiredException {
         String uri = ILinkService.getFullUrl(code);
         response.sendRedirect(uri);
     }

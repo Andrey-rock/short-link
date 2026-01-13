@@ -9,7 +9,9 @@ import com.example.shortlink.exception.LinkNotFoundException;
 import com.example.shortlink.repository.LinkRepository;
 import com.example.shortlink.service.ILinkService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LinkService implements ILinkService {
@@ -41,13 +44,41 @@ public class LinkService implements ILinkService {
             expiresAt = OffsetDateTime.now().plusHours(request.expiresInHours());
         }
 
-        LinkEntity link = LinkEntity.builder()
-                .code(code)
-                .link(request.url())
-                .expiresAt(expiresAt)
-                .build();
+        try {
+            LinkEntity link = LinkEntity.builder()
+                    .code(code)
+                    .link(request.url())
+                    .expiresAt(expiresAt)
+                    .build();
 
-        return linkRepository.save(link);
+            return linkRepository.save(link);
+        } catch (DataIntegrityViolationException e) {
+
+            Optional<LinkEntity> existingByUrl = linkRepository.findByLink(request.url());
+            if (existingByUrl.isPresent()) {
+                return existingByUrl.get();
+            }
+
+            if (request.alias() != null && !request.alias().isEmpty()) {
+                throw new AliasAlreadyExistsException("Alias '" + request.alias() + "' уже занят");
+            }
+
+            for (int i = 0; i < 5; i++) {
+                try {
+                    String newCode = generateUniqueCode();
+                    LinkEntity newLink = LinkEntity.builder()
+                            .code(newCode)
+                            .link(request.url())
+                            .expiresAt(expiresAt)
+                            .createdAt(OffsetDateTime.now())
+                            .build();
+                    return linkRepository.save(newLink);
+                } catch (DataIntegrityViolationException ex) {
+                    log.info("попытка сгенерировать код");
+                }
+            }
+            throw new RuntimeException("Не удалось сгенерировать уникальный код после нескольких попыток");
+        }
     }
 
     @Override
