@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @Service
@@ -36,9 +36,9 @@ public class LinkService implements ILinkService {
         String code = request.alias() != null && !request.alias().isEmpty() ?
                 validateAndReserveAlias(request.alias()) : generateUniqueCode();
 
-        LocalDateTime expiresAt = null;
+        OffsetDateTime expiresAt = null;
         if (request.expiresInHours() != null) {
-            expiresAt = LocalDateTime.now().plusHours(request.expiresInHours());
+            expiresAt = OffsetDateTime.now().plusHours(request.expiresInHours());
         }
 
         LinkEntity link = LinkEntity.builder()
@@ -54,7 +54,7 @@ public class LinkService implements ILinkService {
     public String getFullUrl(String code) {
         LinkEntity link = linkRepository.findByCode(code).orElseThrow(() -> new LinkNotFoundException("страница не найдена"));
 
-        if (link.getExpiresAt() != null && link.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (link.getExpiresAt() != null && link.getExpiresAt().isBefore(OffsetDateTime.now())) {
             throw new LinkExpiredException("Ссылка истекла");
         }
         return link.getLink();

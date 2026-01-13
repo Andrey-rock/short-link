@@ -16,7 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
@@ -35,7 +35,7 @@ public class LinkServiceTest {
     @InjectMocks
     private LinkService linkService;
 
-    LocalDateTime now;
+    OffsetDateTime now;
     String uri;
     String code;
     CreateLinkRequest requestWithoutAliasAndTime, requestWithoutAlias, requestWithoutTime,
@@ -44,7 +44,7 @@ public class LinkServiceTest {
 
     @BeforeEach
     void setUp() {
-        now = LocalDateTime.now();
+        now = OffsetDateTime.now();
         uri = "https://test.com/qwerty123456789";
         code = "test1";
         requestWithoutAliasAndTime = new CreateLinkRequest(uri, null, null);
@@ -52,8 +52,8 @@ public class LinkServiceTest {
         requestWithoutTime = new CreateLinkRequest(uri, "alias", null);
         requestWithAliasAndTime = new CreateLinkRequest(uri, "alias", 24);
         requestWithIncorrectAlias = new CreateLinkRequest(uri, "incorrectAlias", 24);
-        testLink = new LinkEntity(code, uri, now, LocalDateTime.now().plusHours(1));
-        oldTestLink = new LinkEntity(code, uri, now, LocalDateTime.now().minusHours(1));
+        testLink = new LinkEntity(code, uri, now, OffsetDateTime.now().plusHours(1));
+        oldTestLink = new LinkEntity(code, uri, now, OffsetDateTime.now().minusHours(1));
     }
 
     @Test
@@ -78,7 +78,7 @@ public class LinkServiceTest {
                 linkEntity.getLink().equals(uri) &&
                         linkEntity.getCode().matches("[a-zA-Z0-9]{6}") &&
                         linkEntity.getExpiresAt().truncatedTo(ChronoUnit.SECONDS)
-                                .equals(LocalDateTime.now().plusHours(24).truncatedTo(ChronoUnit.SECONDS))));
+                                .equals(OffsetDateTime.now().plusHours(24).truncatedTo(ChronoUnit.SECONDS))));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class LinkServiceTest {
                 linkEntity.getLink().equals(uri) &&
                         linkEntity.getCode().equals("alias") &&
                         linkEntity.getExpiresAt().truncatedTo(ChronoUnit.SECONDS)
-                                .equals(LocalDateTime.now().plusHours(24).truncatedTo(ChronoUnit.SECONDS))));
+                                .equals(OffsetDateTime.now().plusHours(24).truncatedTo(ChronoUnit.SECONDS))));
     }
 
     @Test

@@ -19,6 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 
@@ -44,14 +45,14 @@ public class LinkControllerIntegrationTest {
     @Container
     @ServiceConnection
     private static final PostgreSQLContainer<?> postgreSQLContainer =
-            new PostgreSQLContainer<>("postgres:15-alpine")
+            new PostgreSQLContainer<>("postgres:17.1-alpine")
                     .withDatabaseName("testdb")
                     .withUsername("test")
                     .withPassword("test");
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final String domen = "http://localhost:8080";
+    private static final String domen = "http://localhost";
     private static final String uri = "https://test.com/qwerty123456789";
     private static final String alias = "alias";
     private static final String invalidAliasShort = "ab";
@@ -183,7 +184,7 @@ public class LinkControllerIntegrationTest {
         LinkEntity link = LinkEntity.builder()
                 .code("valid123")
                 .link(uri)
-                .createdAt(LocalDateTime.now())
+                .createdAt(OffsetDateTime.now())
                 .build();
         linkRepository.save(link);
 
@@ -199,8 +200,8 @@ public class LinkControllerIntegrationTest {
         LinkEntity link = LinkEntity.builder()
                 .code("expired1")
                 .link(uri)
-                .createdAt(LocalDateTime.now().minusDays(1))
-                .expiresAt(LocalDateTime.now().minusHours(1))
+                .createdAt(OffsetDateTime.now().minusDays(1))
+                .expiresAt(OffsetDateTime.now().minusHours(1))
                 .build();
         linkRepository.save(link);
 
@@ -224,8 +225,8 @@ public class LinkControllerIntegrationTest {
         LinkEntity link = LinkEntity.builder()
                 .code("future12")
                 .link(uri)
-                .createdAt(LocalDateTime.now())
-                .expiresAt(LocalDateTime.now().plusHours(48))
+                .createdAt(OffsetDateTime.now())
+                .expiresAt(OffsetDateTime.now().plusHours(48))
                 .build();
         linkRepository.save(link);
 
@@ -241,7 +242,7 @@ public class LinkControllerIntegrationTest {
         LinkEntity link = LinkEntity.builder()
                 .code("noexpire")
                 .link(uri)
-                .createdAt(LocalDateTime.now())
+                .createdAt(OffsetDateTime.now())
                 .expiresAt(null) // Без срока истечения
                 .build();
         linkRepository.save(link);
@@ -269,7 +270,7 @@ public class LinkControllerIntegrationTest {
             LinkEntity link = LinkEntity.builder()
                     .code(code)
                     .link(testUrl)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(OffsetDateTime.now())
                     .build();
             linkRepository.save(link);
 
@@ -277,7 +278,7 @@ public class LinkControllerIntegrationTest {
                     .andExpect(status().isFound())
                     .andExpect(redirectedUrl(testUrl));
 
-            linkRepository.deleteAll(); // Очищаем после каждого теста
+            linkRepository.deleteAll();
         }
     }
 
@@ -288,7 +289,7 @@ public class LinkControllerIntegrationTest {
         LinkEntity link = LinkEntity.builder()
                 .code("testcode")
                 .link(uri)
-                .createdAt(LocalDateTime.now())
+                .createdAt(OffsetDateTime.now())
                 .build();
         linkRepository.save(link);
 

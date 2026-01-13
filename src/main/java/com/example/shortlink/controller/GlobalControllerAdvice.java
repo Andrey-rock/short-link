@@ -1,6 +1,10 @@
-package com.example.shortlink.exception;
+package com.example.shortlink.controller;
 
 import com.example.shortlink.dto.ResponseError;
+import com.example.shortlink.exception.AliasAlreadyExistsException;
+import com.example.shortlink.exception.InvalidAliasException;
+import com.example.shortlink.exception.LinkExpiredException;
+import com.example.shortlink.exception.LinkNotFoundException;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +52,7 @@ public class GlobalControllerAdvice {
             AliasAlreadyExistsException.class,
             InvalidAliasException.class,
             LimitExceededException.class,
-            LinkExpiredException.class  // добавьте это исключение
+            LinkExpiredException.class
     })
     public ResponseEntity<ResponseError> handleAllBusinessException(final Exception e) {
         ResponseError error = ResponseError.builder()

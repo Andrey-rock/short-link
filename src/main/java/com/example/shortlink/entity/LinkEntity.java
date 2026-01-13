@@ -7,7 +7,7 @@ import jakarta.persistence.Table;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 
 @Entity
@@ -29,10 +29,10 @@ public class LinkEntity {
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(name = "expires_at")
-    private LocalDateTime expiresAt;
+    private OffsetDateTime expiresAt;
 
     @Override
     public boolean equals(Object o) {

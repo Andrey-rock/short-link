@@ -3,6 +3,7 @@ package com.example.shortlink.controller;
 import com.example.shortlink.dto.CreateLinkRequest;
 import com.example.shortlink.entity.LinkEntity;
 import com.example.shortlink.service.ILinkService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +23,13 @@ public class LinkController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/add")
-    public String addLink(@Valid @RequestBody CreateLinkRequest request) {
-        String domen = "http://localhost:8080";
+    public String addLink(@Valid @RequestBody CreateLinkRequest request, HttpServletRequest httpServletRequest) {
+        String domen = httpServletRequest.getRequestURL()
+                .substring(0, httpServletRequest.getRequestURL().toString().indexOf("/add"));
         LinkEntity entity = ILinkService.addLink(request);
+        String PATTERN = "dd.MM.yyyy HH:mm";
         String expires = entity.getExpiresAt() != null
-                ? entity.getExpiresAt().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
+                ? entity.getExpiresAt().format(DateTimeFormatter.ofPattern(PATTERN))
                 : "неограниченно";
         return "Ваш новый адрес: " + domen + "/" + entity.getCode().trim() + "\n" +
                 "Полный адрес: " + entity.getLink() + "\n" +
