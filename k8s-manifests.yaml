@@ -21,7 +21,7 @@ spec:
             - name: POSTGRES_USER
               value: "postgres"
             - name: POSTGRES_PASSWORD
-              value: "password123"
+              value: "postgres"
             - name: POSTGRES_DB
               value: "shortlinkdb"
           ports:
@@ -57,8 +57,7 @@ metadata:
   name: postgres-init
 data:
   initdb.sql: |
-    -- Ваш SQL файл содержимое
-    -- Сюда вставьте содержимое src/main/resources/db/changelog/initdb.sql
+   CREATE DATABASE links;
 ---
 # Spring Boot App Deployment
 apiVersion: apps/v1
@@ -85,23 +84,21 @@ spec:
             - name: SPRING_DATASOURCE_USERNAME
               value: "postgres"
             - name: SPRING_DATASOURCE_PASSWORD
-              value: "password123"
+              value: "postgres"
             - name: SPRING_JPA_HIBERNATE_DDL_AUTO
               value: "none"
           ports:
             - containerPort: 8080
-#          livenessProbe:
-#            httpGet:
-#              path: /actuator/health
-#              port: 8080
-#            initialDelaySeconds: 90
-#            periodSeconds: 10
-#          readinessProbe:
-#            httpGet:
-#              path: /actuator/health
-#              port: 8080
-#            initialDelaySeconds: 30
-#            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
 ---
 # Spring Boot Service
 apiVersion: v1
@@ -113,5 +110,5 @@ spec:
   selector:
     app: shortlink-app
   ports:
-    - port: 80
+    - port: 8081
       targetPort: 8080
