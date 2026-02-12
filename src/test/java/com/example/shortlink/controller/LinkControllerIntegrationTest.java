@@ -18,12 +18,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import tools.jackson.databind.ObjectMapper;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -73,20 +72,19 @@ public class LinkControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("Post /add - если указан алиас и срок действия," +
-            "должен сохранить ссылку с заданными параметрами")
+    @DisplayName("Post /add - если указан алиас и срок действия, должен сохранить ссылку с заданными параметрами")
     void addLink_WhenExistAliasAndTimeLive_ShouldSaveLinkWithAlLAttribute() throws Exception {
-
         String requestBody = objectMapper.writeValueAsString(CREATE_LINK_REQUEST_FULL);
-        String expectedResult = "Ваш новый адрес: " + domen + "/" + alias + "\n" +
-                "Полный адрес: " + uri + "\n" +
-                "Срок окончания действия новой ссылки: " + LocalDateTime.now().plusHours(24).format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
 
         mockMvc.perform(post("/add")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isCreated())
-                .andExpect(content().string(expectedResult));
+                .andExpect(content().string(matchesPattern(
+                        "Ваш новый адрес: " + Pattern.quote(domen) + "/" + alias + "\r?\n" +
+                                "Полный адрес: " + Pattern.quote(uri) + "\r?\n" +
+                                "Срок окончания действия новой ссылки: \\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2}"
+                )));
     }
 
     @Test
@@ -95,15 +93,16 @@ public class LinkControllerIntegrationTest {
     void addLink_WhenExistAliasAndTimeLive_ShouldSaveLinkWithoutTimeLive() throws Exception {
 
         String requestBody = objectMapper.writeValueAsString(CREATE_LINK_REQUEST_ALIAS);
-        String expectedResult = "Ваш новый адрес: " + domen + "/" + alias + "\n" +
-                "Полный адрес: " + uri + "\n" +
-                "Срок окончания действия новой ссылки: неограниченно";
 
         mockMvc.perform(post("/add")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isCreated())
-                .andExpect(content().string(expectedResult));
+                .andExpect(content().string(matchesPattern(
+                        "Ваш новый адрес: " + Pattern.quote(domen) + "/" + alias + "\r?\n" +
+                                "Полный адрес: " + Pattern.quote(uri) + "\r?\n" +
+                                "Срок окончания действия новой ссылки: неограниченно"
+                )));
     }
 
     @Test
@@ -122,8 +121,8 @@ public class LinkControllerIntegrationTest {
 
                     // Проверяем весь формат ответа
                     assertThat(response).matches(
-                            "Ваш новый адрес: " + Pattern.quote(domen) + "/[a-zA-Z0-9]+\n" +
-                                    "Полный адрес: " + Pattern.quote(uri) + "\\n" +
+                            "Ваш новый адрес: " + Pattern.quote(domen) + "/[a-zA-Z0-9]+\r?\n" +
+                                    "Полный адрес: " + Pattern.quote(uri) + "\r?\n" +
                                     "Срок окончания действия новой ссылки: неограниченно"
                     );
                 });

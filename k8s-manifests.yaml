@@ -23,7 +23,7 @@ spec:
             - name: POSTGRES_PASSWORD
               value: "postgres"
             - name: POSTGRES_DB
-              value: "shortlinkdb"
+              value: "links"
           ports:
             - containerPort: 5432
           volumeMounts:
@@ -80,7 +80,7 @@ spec:
           imagePullPolicy: Never
           env:
             - name: SPRING_DATASOURCE_URL
-              value: "jdbc:postgresql://postgres:5432/shortlinkdb"
+              value: "jdbc:postgresql://postgres:5432/links"
             - name: SPRING_DATASOURCE_USERNAME
               value: "postgres"
             - name: SPRING_DATASOURCE_PASSWORD
@@ -90,12 +90,14 @@ spec:
           ports:
             - containerPort: 8080
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /actuator/health
               port: 8080
             initialDelaySeconds: 90
             periodSeconds: 10
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /actuator/health
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 5
