@@ -17,6 +17,13 @@ spec:
       containers:
         - name: postgres
           image: postgres:17.1-alpine
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
           env:
             - name: POSTGRES_USER
               value: "postgres"
@@ -38,7 +45,7 @@ spec:
           configMap:
             name: postgres-init
 ---
-# PostgreSQL Service
+# PostgreSQL Service (без изменений)
 apiVersion: v1
 kind: Service
 metadata:
@@ -50,14 +57,14 @@ spec:
     - port: 5432
       targetPort: 5432
 ---
-# PostgreSQL ConfigMap (init SQL)
+# PostgreSQL ConfigMap (без изменений)
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-init
 data:
   initdb.sql: |
-   CREATE DATABASE links;
+    CREATE DATABASE links;
 ---
 # Spring Boot App Deployment
 apiVersion: apps/v1
@@ -78,6 +85,13 @@ spec:
         - name: shortlink-app
           image: my-java-app:latest
           imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
           env:
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:postgresql://postgres:5432/links"
@@ -102,7 +116,7 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 5
 ---
-# Spring Boot Service
+# Spring Boot Service (без изменений)
 apiVersion: v1
 kind: Service
 metadata:
