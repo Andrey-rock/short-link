@@ -1,0 +1,130 @@
+---
+# PostgreSQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17.1-alpine
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "postgres"
+            - name: POSTGRES_DB
+              value: "links"
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: postgres-data
+          emptyDir: {}
+        - name: init-sql
+          configMap:
+            name: postgres-init
+---
+# PostgreSQL Service (без изменений)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# PostgreSQL ConfigMap (без изменений)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+data:
+  initdb.sql: |
+    CREATE DATABASE links;
+---
+# Spring Boot App Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shortlink-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shortlink-app
+  template:
+    metadata:
+      labels:
+        app: shortlink-app
+    spec:
+      containers:
+        - name: shortlink-app
+          image: my-java-app:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres:5432/links"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "postgres"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "postgres"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "none"
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
+---
+# Spring Boot Service (без изменений)
+apiVersion: v1
+kind: Service
+metadata:
+  name: shortlink-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: shortlink-app
+  ports:
+    - port: 8081
+      targetPort: 8080
